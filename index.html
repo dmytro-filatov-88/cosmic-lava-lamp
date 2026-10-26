@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Cosmic Lava Lamp 🪐✨ — Raymarched WebGL & Ambient Space Sound</title>
+  <meta name="description" content="A mesmerizing WebGL raymarched metaball lava lamp floating in deep space. Drag to stir molten neon blobs, scroll to shift gravitational pull, and listen to an evolving ambient space drone.">
+
+  <!-- Custom SVG Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='neon' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23ff007f'/%3E%3Cstop offset='50%25' stop-color='%237928ca'/%3E%3Cstop offset='100%25' stop-color='%2300f2fe'/%3E%3C/linearGradient%3E%3CradialGradient id='blob' cx='40%25' cy='35%25' r='55%25'%3E%3Cstop offset='0%25' stop-color='%23ffffff'/%3E%3Cstop offset='45%25' stop-color='%23ff00aa'/%3E%3Cstop offset='100%25' stop-color='%234c00ff'/%3E%3C/radialGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='%23060713'/%3E%3Cpath d='M22 14h20v6l-4 8v16l4 8v6H22v-6l4-8V28l-4-8z' fill='%2313172e' stroke='url(%23neon)' stroke-width='2' stroke-linejoin='round'/%3E%3Cellipse cx='32' cy='38' rx='8' ry='11' fill='url(%23blob)' filter='drop-shadow(0 0 6px %23ff00aa)'/%3E%3Ccircle cx='32' cy='22' r='4' fill='%2300f2fe' filter='drop-shadow(0 0 4px %2300f2fe)'/%3E%3C/svg%3E">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Main Fullscreen WebGL Canvas -->
+    <canvas id="gl-canvas"></canvas>
+
+    <!-- Top HUD Navigation & Controls -->
+    <header class="hud-top">
+      <div class="brand">
+        <span class="brand-glyph" id="easter-egg-lamp" title="Click 3 times for Cosmic Singularity!">🪐</span>
+        <div class="brand-info">
+          <h1 class="brand-title">COSMIC <span class="gradient-text">LAVA LAMP</span></h1>
+          <p class="brand-sub">Raymarched Quantum Fluid &bull; Deep Space Ambient</p>
+        </div>
+      </div>
+
+      <!-- Color Palette Picker -->
+      <nav class="palette-picker" aria-label="Lava Lamp Neon Themes">
+        <button class="palette-btn active" data-palette="nebula" title="Cyber Nebula (Magenta & Cyan) [Key: 1]">
+          <span class="swatch swatch-nebula"></span>
+          <span class="btn-label">Nebula</span>
+        </button>
+        <button class="palette-btn" data-palette="solar" title="Solar Flare (Molten Gold & Crimson) [Key: 2]">
+          <span class="swatch swatch-solar"></span>
+          <span class="btn-label">Solar</span>
+        </button>
+        <button class="palette-btn" data-palette="plasma" title="Alien Plasma (Toxic Emerald & Cyan) [Key: 3]">
+          <span class="swatch swatch-plasma"></span>
+          <span class="btn-label">Plasma</span>
+        </button>
+        <button class="palette-btn" data-palette="cryo" title="Cryo Void (Electric Ice & Deep Blue) [Key: 4]">
+          <span class="swatch swatch-cryo"></span>
+          <span class="btn-label">Cryo</span>
+        </button>
+        <button class="palette-btn" data-palette="prism" title="Psychedelic Prism (Hyper Rainbow) [Key: 5]">
+          <span class="swatch swatch-prism"></span>
+          <span class="btn-label">Prism</span>
+        </button>
+      </nav>
+
+      <!-- Action Tools -->
+      <div class="hud-actions">
+        <button id="btn-stir" class="hud-btn" title="Agitate & Stir Fluid Viscosity [Key: Space]">
+          <span class="btn-icon">🌀</span>
+          <span class="btn-label">Agitate</span>
+        </button>
+        <button id="btn-gravity-mode" class="hud-btn" title="Toggle Gravity Modes (Normal, Zero-G, Inverted) [Key: G]">
+          <span class="btn-icon" id="gravity-icon">🌍</span>
+          <span class="btn-label" id="gravity-mode-label">1.0 G</span>
+        </button>
+        <button id="btn-supernova" class="hud-btn special" title="Trigger Supernova Thermal Explosion! [Key: S]">
+          <span class="btn-icon">💥</span>
+          <span class="btn-label">Supernova</span>
+        </button>
+        <button id="btn-audio" class="hud-btn icon-only" title="Toggle Ambient Audio [Key: M]" aria-label="Toggle Sound">
+          <span id="audio-icon">🔊</span>
+        </button>
+        <button id="btn-fullscreen" class="hud-btn icon-only" title="Toggle Fullscreen [Key: F]" aria-label="Toggle Fullscreen">
+          <span id="fullscreen-icon">⛶</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Center Interactive Hint (Fades out after first interaction) -->
+    <div id="gesture-hint" class="gesture-hint">
+      <div class="hint-card">
+        <div class="hint-icons">
+          <span class="hand-anim">👆</span>
+          <span class="mouse-anim">🖱️</span>
+        </div>
+        <div class="hint-copy">
+          <strong>Drag & Swirl to Stir Molten Blobs</strong>
+          <span>Scroll trackpad to shift gravity &bull; Click to create shockwaves</span>
+        </div>
+        <button id="btn-dismiss-hint" class="btn-dismiss">Enter Space</button>
+      </div>
+    </div>
+
+    <!-- Floating Supernova Notification Banner -->
+    <div id="event-toast" class="event-toast" aria-live="polite"></div>
+
+    <!-- Bottom HUD Telemetry & Gravity Readout -->
+    <footer class="hud-bottom">
+      <div class="telemetry-bar">
+        <div class="meter-box">
+          <span class="meter-label">GRAVITY</span>
+          <div class="meter-track">
+            <div id="gravity-bar" class="meter-fill" style="width: 50%;"></div>
+          </div>
+          <span id="gravity-val" class="meter-val">+1.00 G</span>
+        </div>
+
+        <div class="meter-box">
+          <span class="meter-label">CORE TEMP</span>
+          <div class="meter-track">
+            <div id="temp-bar" class="meter-fill warm" style="width: 65%;"></div>
+          </div>
+          <span id="temp-val" class="meter-val">1420 &deg;K</span>
+        </div>
+
+        <div class="meter-box">
+          <span class="meter-label">VISCOSITY</span>
+          <div class="meter-track">
+            <div id="visc-bar" class="meter-fill visc" style="width: 78%;"></div>
+          </div>
+          <span id="visc-val" class="meter-val">0.78 &mu;Pa&middot;s</span>
+        </div>
+      </div>
+
+      <div class="ambient-status">
+        <span class="pulse-dot"></span>
+        <span id="ambient-note-label">Deep Space Resonance 48 Hz</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+
+<script>window.__BORED_AI_SLUG__="cosmic-lava-lamp";</script>
+<script src="report-widget.js"></script>
+</body>
+</html>
